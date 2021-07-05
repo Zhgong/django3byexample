@@ -2,23 +2,30 @@ from django.core import paginator
 from django.shortcuts import get_object_or_404, render
 from .models import Post
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.views.generic import ListView
 
 # Create your views here.
 
+class PostListView(ListView):
+    queryset = Post.published.all()
+    context_object_name = "posts"
+    paginate_by = 3
+    template_name = "blog/post/list.html"
 
-def post_list(request):
-    object_list = Post.published.all()
-    paginator = Paginator(object_list, 3)  # 每页三个
-    page = request.GET.get('page')
 
-    try:
-        posts = paginator.page(page)
-    except PageNotAnInteger:
-        posts = paginator.page(1)  # 如果页数不是一个整数，则显示第一页
-    except EmptyPage:
-        posts = paginator.page(paginator.num_pages)  # 如果页数超出范围，则显示最后一页
+# def post_list(request):
+#     object_list = Post.published.all()
+#     paginator = Paginator(object_list, 3)  # 每页三个
+#     page = request.GET.get('page')
 
-    return render(request, "blog/post/list.html", {"page": page, "posts": posts})
+#     try:
+#         posts = paginator.page(page)
+#     except PageNotAnInteger:
+#         posts = paginator.page(1)  # 如果页数不是一个整数，则显示第一页
+#     except EmptyPage:
+#         posts = paginator.page(paginator.num_pages)  # 如果页数超出范围，则显示最后一页
+
+#     return render(request, "blog/post/list.html", {"page": page, "posts": posts})
 
 
 def post_detail(request, year, month, day, post):
