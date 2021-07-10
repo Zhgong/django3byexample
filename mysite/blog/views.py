@@ -1,10 +1,10 @@
 from django.core import paginator
 from django.shortcuts import get_object_or_404, render
-from .models import Post
+from .models import Post, Comment
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.generic import ListView
 from django.views.generic.base import TemplateView
-from .forms import EmailPostForm
+from .forms import EmailPostForm, CommentForm
 from django.core.mail import send_mail
 
 # Create your views here.
@@ -29,8 +29,39 @@ class PostDetailView(TemplateView):
 
         post = get_object_or_404(Post, slug=kwargs["post"], status="published",
                              publish__year=kwargs["year"], publish__month=kwargs["month"], publish__day=kwargs["day"])
+        comments = post.comments.filter(active=True)
+        comment_form = CommentForm()
         context['post'] = post
+        context['comments'] = comments
+        context['comment_form'] = comment_form
         return context
+
+    def post(self, request, *args, **kwargs):
+        context = self.post_context_data(request, *args, **kwargs)
+        return self.render_to_response(context)
+
+    def post_context_data(self, request, *args, **kwargs):
+        context = super(PostDetailView, self).get_context_data(*args, **kwargs)
+
+        post = get_object_or_404(Post, slug=kwargs["post"], status="published",
+                             publish__year=kwargs["year"], publish__month=kwargs["month"], publish__day=kwargs["day"])
+
+        
+        comments = post.comments.filter(active=True)
+        comment_form = CommentForm(data=request.POST)
+
+        # 保存到数据库
+        if comment_form.is_valid():
+            new_comment = comment_form.save(commit=False) # 创建对象但是不保存
+            new_comment.post = post # 链接post
+            new_comment.save() # 保存
+
+        context['post'] = post
+        context['comments'] = comments
+        context['comment_form'] = comment_form
+        context['new_comment'] = True
+        return context
+
 
 
 
