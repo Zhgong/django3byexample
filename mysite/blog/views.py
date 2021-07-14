@@ -6,16 +6,35 @@ from django.views.generic import ListView
 from django.views.generic.base import TemplateView
 from .forms import EmailPostForm, CommentForm
 from django.core.mail import send_mail
+from taggit.models import Tag
+from django.db.models import Count
 
 # Create your views here.
 
-class PostListView(ListView):
-    queryset = Post.published.all()
-    context_object_name = "posts"
-    paginate_by = 3
-    template_name = "blog/post/list.html"
+# class PostListView(ListView):
+#     queryset = Post.published.all()
+#     context_object_name = "posts"
+#     paginate_by = 3
+#     template_name = "blog/post/list.html"
 
+def post_list(request, tag_slug=None):
+    object_list = Post.published.all()
+    tag = None
+    if tag_slug:
+        tag = get_object_or_404(Tag, slug=tag_slug)
+        object_list = object_list.filter(tags__in=[tag])
 
+    paginator = Paginator(object_list, 3) # 3 posts in each page
+    page = request.GET.get('page')
+    try:
+        posts = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer deliver the first page
+        posts = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range deliver last page of results
+        posts = paginator.page(paginator.num_pages)
+    return render(request, 'blog/post/list.html', {'page': page, 'posts': posts, 'tag': tag})
 
 class PostDetailView(TemplateView):
     model = Post
@@ -29,11 +48,24 @@ class PostDetailView(TemplateView):
 
         post = get_object_or_404(Post, slug=kwargs["post"], status="published",
                              publish__year=kwargs["year"], publish__month=kwargs["month"], publish__day=kwargs["day"])
+        
+        #列出相似的推文
+        post_tags_ids = post.tags.values_list("id", flat=True) # 获取此推文所有的标签，并将结果扁平化处理 [(1,), (2,), (3,) ...] ==> [1, 2, 3, ...]
+        similar_posts = Post.published.filter(tags__in=post_tags_ids).exclude(id=post.id) # 查找类似的推文，__in 是内置的查找方法
+        # 返回的结果是一个查询对象，如果把它列表化，其中会有重复的元素，如果某个推文其中有两个tag符合要求，这个推文会在列表中出现两次。
+
+        # 将上一步得到的结果进行归类汇总（计数），然后排序。    
+        similar_posts = similar_posts.annotate(same_tags=Count('tags')).order_by('-same_tags','-publish')[:4]
+
+
         comments = post.comments.filter(active=True)
         comment_form = CommentForm()
         context['post'] = post
         context['comments'] = comments
         context['comment_form'] = comment_form
+        context['similar_posts'] = similar_posts
+
+    
         return context
 
     def post(self, request, *args, **kwargs):
