@@ -11,37 +11,30 @@ from django.db.models import Count
 
 # Create your views here.
 
-# class PostListView(ListView):
-#     queryset = Post.published.all()
-#     context_object_name = "posts"
-#     paginate_by = 3
-#     template_name = "blog/post/list.html"
+class PostListView(ListView):
+    queryset = Post.published.all()
+    context_object_name = "posts"
+    paginate_by = 3
+    template_name = "blog/post/list.html"
 
-def post_list(request, tag_slug=None):
-    object_list = Post.published.all()
-    tag = None
-    if tag_slug:
-        tag = get_object_or_404(Tag, slug=tag_slug)
-        object_list = object_list.filter(tags__in=[tag])
+    def get_context_data(self, **kwargs):
+        tag_slug = self.kwargs.get("tag_slug")
+        object_list = Post.published.all()
 
-    paginator = Paginator(object_list, 3) # 3 posts in each page
-    page = request.GET.get('page')
-    try:
-        posts = paginator.page(page)
-    except PageNotAnInteger:
-        # If page is not an integer deliver the first page
-        posts = paginator.page(1)
-    except EmptyPage:
-        # If page is out of range deliver last page of results
-        posts = paginator.page(paginator.num_pages)
-    return render(request, 'blog/post/list.html', {'page': page, 'posts': posts, 'tag': tag})
+        tag = None
+        if tag_slug:
+            tag = get_object_or_404(Tag, slug=tag_slug)
+            object_list = object_list.filter(tags__in=[tag])
+        context = super().get_context_data(**kwargs)
+        context['posts'] = object_list
+        context['tag'] = tag
+        return context
 
 class PostDetailView(TemplateView):
     model = Post
     template_name = "blog/post/detail.html"
 
     def get_context_data(self, *args, **kwargs):
-        print("mark")
         print(args)
         print(kwargs)
         context = super(PostDetailView, self).get_context_data(*args, **kwargs)
