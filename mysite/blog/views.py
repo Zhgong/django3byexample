@@ -18,7 +18,7 @@ class PostListView(ListView):
     template_name = "blog/post/list.html"
 
     def get_context_data(self, **kwargs):
-        tag_slug = self.kwargs.get("tag_slug")
+        tag_slug = self.kwargs.get("tag_slug") #在listview中url参数是通过self.kwargs来传递的，get_context_data里面只能接收通过?号传递的查询参数
         object_list = Post.published.all()
 
         tag = None
