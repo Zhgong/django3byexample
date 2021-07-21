@@ -6,8 +6,10 @@ name = "pypi"
 [packages]
 django = "==3.0.*"
 django-taggit = "*"
+markdown = "*"
 
 [dev-packages]
+ipython = "*"
 
 [requires]
 python_version = "3.9"
