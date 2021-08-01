@@ -4,12 +4,14 @@ from .models import Post, Comment
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.generic import ListView
 from django.views.generic.base import TemplateView
-from .forms import EmailPostForm, CommentForm
+from django.contrib.postgres.search import SearchVector
+from .forms import EmailPostForm, CommentForm, SearchForm
 from django.core.mail import send_mail
 from taggit.models import Tag
 from django.db.models import Count
 
 # Create your views here.
+
 
 class PostListView(ListView):
     queryset = Post.published.all()
@@ -18,7 +20,8 @@ class PostListView(ListView):
     template_name = "blog/post/list.html"
 
     def get_context_data(self, **kwargs):
-        tag_slug = self.kwargs.get("tag_slug") #在listview中url参数是通过self.kwargs来传递的，get_context_data里面只能接收通过?号传递的查询参数
+        # 在listview中url参数是通过self.kwargs来传递的，get_context_data里面只能接收通过?号传递的查询参数
+        tag_slug = self.kwargs.get("tag_slug")
         object_list = Post.published.all()
 
         tag = None
@@ -30,6 +33,7 @@ class PostListView(ListView):
         context['tag'] = tag
         return context
 
+
 class PostDetailView(TemplateView):
     model = Post
     template_name = "blog/post/detail.html"
@@ -40,16 +44,18 @@ class PostDetailView(TemplateView):
         context = super(PostDetailView, self).get_context_data(*args, **kwargs)
 
         post = get_object_or_404(Post, slug=kwargs["post"], status="published",
-                             publish__year=kwargs["year"], publish__month=kwargs["month"], publish__day=kwargs["day"])
-        
-        #列出相似的推文
-        post_tags_ids = post.tags.values_list("id", flat=True) # 获取此推文所有的标签，并将结果扁平化处理 [(1,), (2,), (3,) ...] ==> [1, 2, 3, ...]
-        similar_posts = Post.published.filter(tags__in=post_tags_ids).exclude(id=post.id) # 查找类似的推文，__in 是内置的查找方法
+                                 publish__year=kwargs["year"], publish__month=kwargs["month"], publish__day=kwargs["day"])
+
+        # 列出相似的推文
+        # 获取此推文所有的标签，并将结果扁平化处理 [(1,), (2,), (3,) ...] ==> [1, 2, 3, ...]
+        post_tags_ids = post.tags.values_list("id", flat=True)
+        similar_posts = Post.published.filter(tags__in=post_tags_ids).exclude(
+            id=post.id)  # 查找类似的推文，__in 是内置的查找方法
         # 返回的结果是一个查询对象，如果把它列表化，其中会有重复的元素，如果某个推文其中有两个tag符合要求，这个推文会在列表中出现两次。
 
-        # 将上一步得到的结果进行归类汇总（计数），然后排序。    
-        similar_posts = similar_posts.annotate(same_tags=Count('tags')).order_by('-same_tags','-publish')[:4]
-
+        # 将上一步得到的结果进行归类汇总（计数），然后排序。
+        similar_posts = similar_posts.annotate(same_tags=Count(
+            'tags')).order_by('-same_tags', '-publish')[:4]
 
         comments = post.comments.filter(active=True)
         comment_form = CommentForm()
@@ -58,7 +64,6 @@ class PostDetailView(TemplateView):
         context['comment_form'] = comment_form
         context['similar_posts'] = similar_posts
 
-    
         return context
 
     def post(self, request, *args, **kwargs):
@@ -69,25 +74,22 @@ class PostDetailView(TemplateView):
         context = super(PostDetailView, self).get_context_data(*args, **kwargs)
 
         post = get_object_or_404(Post, slug=kwargs["post"], status="published",
-                             publish__year=kwargs["year"], publish__month=kwargs["month"], publish__day=kwargs["day"])
+                                 publish__year=kwargs["year"], publish__month=kwargs["month"], publish__day=kwargs["day"])
 
-        
         comments = post.comments.filter(active=True)
         comment_form = CommentForm(data=request.POST)
 
         # 保存到数据库
         if comment_form.is_valid():
-            new_comment = comment_form.save(commit=False) # 创建对象但是不保存
-            new_comment.post = post # 链接post
-            new_comment.save() # 保存
+            new_comment = comment_form.save(commit=False)  # 创建对象但是不保存
+            new_comment.post = post  # 链接post
+            new_comment.save()  # 保存
 
         context['post'] = post
         context['comments'] = comments
         context['comment_form'] = comment_form
         context['new_comment'] = True
         return context
-
-
 
 
 def post_share(request, post_id):
@@ -106,4 +108,22 @@ def post_share(request, post_id):
     else:
         # 空的表
         form = EmailPostForm()
-    return render(request, "blog/post/share.html", {"post":post, "form":form, "sent":sent})
+    return render(request, "blog/post/share.html", {"post": post, "form": form, "sent": sent})
+
+
+def post_search(request):
+    form = SearchForm()
+    query = None
+    results = []
+    if 'query' in request.GET:
+        form = SearchForm(request.GET)
+        if form.is_valid():
+            query = form.cleaned_data['query']
+            results = Post.published.annotate(
+                search=SearchVector('title', 'body'),).filter(search=query) # 传回搜索结果
+    return render(request,
+                  'blog/post/search.html',
+                  {'form': form,
+                   'query': query,
+                   'results': results
+                   })
