@@ -9,6 +9,7 @@ from .forms import EmailPostForm, CommentForm, SearchForm
 from django.core.mail import send_mail
 from taggit.models import Tag
 from django.db.models import Count
+from django.contrib.postgres.search import TrigramSimilarity
 
 # Create your views here.
 
@@ -123,8 +124,8 @@ def post_search(request):
                 'title', weight='A') + SearchVector('body', weight='B')  # A:1.0, B:0.4 给予标题更大的权重
             search_query = SearchQuery(query)
             results = Post.published.annotate(
-                rank=SearchRank(search_vector, search_query)
-            ).filter(rank__gte=0.3).order_by('-rank')  # 传回搜索结果 筛选评分大于0.3的结果
+                similarity=TrigramSimilarity('title', query),
+            ).filter(similarity__gte=0.1).order_by('-similarity')  # 传回搜索结果 筛选评相似度大于0.1的结果
     return render(request,
                   'blog/post/search.html',
                   {'form': form,
