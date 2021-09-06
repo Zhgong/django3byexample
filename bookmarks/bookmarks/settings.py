@@ -125,3 +125,6 @@ STATIC_URL = '/static/'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGIN_URL = 'login'
 LOGOUT_URL = 'logout'
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend' # 用于测试配置，将要发送的email输出到控制台
