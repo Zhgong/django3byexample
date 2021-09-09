@@ -7,12 +7,12 @@ name = "pypi"
 django = "==3.0.*"
 django-taggit = "*"
 markdown = "*"
-psycopg2-binary = "==2.8.4"
 django-stubs = "*"
 
 [dev-packages]
 ipython = "*"
 mypy = "*"
+psycopg2-binary = "*"
 
 [requires]
 python_version = "3.9"
