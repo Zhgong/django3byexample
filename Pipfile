@@ -8,6 +8,7 @@ django = "==3.0.*"
 django-taggit = "*"
 markdown = "*"
 django-stubs = "*"
+pillow = "*"
 
 [dev-packages]
 ipython = "*"
