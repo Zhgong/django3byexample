@@ -2,8 +2,10 @@ from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.shortcuts import render
 from django.contrib.auth import authenticate, login
-from .froms import LoginForm
+from .froms import LoginForm, UserRgistrationForm
 from django.contrib.auth.decorators import login_required
+from django.http.request import HttpRequest
+from django.contrib.auth.models import User
 
 # def user_login(request):
 #     if request.method == 'POST':
@@ -34,5 +36,26 @@ from django.contrib.auth.decorators import login_required
 # Create your views here.
 
 @login_required
-def dashboard(request):
+def dashboard(request: HttpRequest):
     return render(request, 'account/dashboard.html', {'section': 'dashboard'})
+
+
+def register(request: HttpRequest):
+    if request.method == 'POST': # 用户输入的数据（新表单）
+        user_form = UserRgistrationForm(request.POST) # request.POST是一个字典数据，通过这个字典数据创建表
+        
+        if user_form.is_valid():
+            # 创建新的用户
+            new_user:User = user_form.save(commit=False) # 暂时不保存
+
+            new_user.set_password(user_form.cleaned_data['password']) # 使用set_password来存储散列过的密码
+            # 保存用户
+            new_user.save()
+
+            # 转到注册完成
+            return render(request, 'account/register_done.html', {'new_user': new_user})
+
+    else:
+
+        user_form = UserRgistrationForm() # 空的表单
+    return render(request, 'account/register.html', {'user_form': user_form})
