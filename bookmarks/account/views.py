@@ -2,7 +2,7 @@ from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.shortcuts import render
 from django.contrib.auth import authenticate, login
-from .froms import LoginForm, UserRgistrationForm
+from .froms import LoginForm, UserRgistrationForm, UserEditForm, ProfileEditForm
 from django.contrib.auth.decorators import login_required
 from django.http.request import HttpRequest
 from django.contrib.auth.models import User
@@ -59,3 +59,19 @@ def register(request: HttpRequest):
 
         user_form = UserRgistrationForm() # 空的表单
     return render(request, 'account/register.html', {'user_form': user_form})
+
+
+@login_required
+def edit(request: HttpRequest):
+    if request.method == 'POST':
+        print(request.POST)
+        user_form = UserEditForm(instance=request.user, data=request.POST) # 从post中获取数据（用户填写），并且应用到当前的对象
+        profile_form = ProfileEditForm(instance=request.user.profile, data=request.POST, files=request.FILES)
+
+        if user_form.is_valid() and profile_form.is_valid():
+            user_form.save()
+            profile_form.save()
+    else:
+        user_form = UserEditForm(instance=request.user) # type: ignore # 通过当前的请求的用户，通过关联在数据库中的数据来创建表单。
+        profile_form = ProfileEditForm(instance=request.user.profile)
+    return render(request, 'account/edit.html', {'user_form': user_form, 'profile_form':profile_form})
