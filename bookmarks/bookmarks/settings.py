@@ -28,6 +28,7 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -67,6 +68,11 @@ TEMPLATES = [
             ],
         },
     },
+]
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend', # 系统默认的登录
+    'account.authentication.EmailAuthBackend', # 添加使用email登录的选项
 ]
 
 WSGI_APPLICATION = 'bookmarks.wsgi.application'
