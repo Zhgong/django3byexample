@@ -6,6 +6,7 @@ from .froms import LoginForm, UserRgistrationForm, UserEditForm, ProfileEditForm
 from django.contrib.auth.decorators import login_required
 from django.http.request import HttpRequest
 from django.contrib.auth.models import User
+from django.contrib import messages
 
 # def user_login(request):
 #     if request.method == 'POST':
@@ -71,6 +72,9 @@ def edit(request: HttpRequest):
         if user_form.is_valid() and profile_form.is_valid():
             user_form.save()
             profile_form.save()
+            messages.success(request, 'Profile updated successfully')
+        else:
+            messages.error(request, 'Error updating your profile')
     else:
         user_form = UserEditForm(instance=request.user) # type: ignore # 通过当前的请求的用户，通过关联在数据库中的数据来创建表单。
         profile_form = ProfileEditForm(instance=request.user.profile)
