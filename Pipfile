@@ -9,6 +9,10 @@ django-taggit = "*"
 markdown = "*"
 django-stubs = "*"
 pillow = "*"
+social-auth-app-django = "*"
+django-extensions = "*"
+werkzeug = "*"
+pyopenssl = "*"
 
 [dev-packages]
 ipython = "*"

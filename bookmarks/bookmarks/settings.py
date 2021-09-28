@@ -25,7 +25,7 @@ SECRET_KEY = 'mx7drz$s22zmn=6ar(q3)y)9^*v)0!$gir(y()#jv_on=gly+3'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['mytestsite.com', 'localhost', '127.0.0.1']
 
 
 
@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'social_django',
+    'django_extensions',
     
 ]
 
@@ -73,7 +75,23 @@ TEMPLATES = [
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend', # 系统默认的登录
     'account.authentication.EmailAuthBackend', # 添加使用email登录的选项
+    'social_core.backends.facebook.FacebookOAuth2', # 添加facebook授权认证
+    'social_core.backends.twitter.TwitterOAuth', # 添加twitter认证授权
+    'social_core.backends.google.GoogleOAuth2', # 添加google认证授权
 ]
+
+
+
+SOCIAL_AUTH_FACEBOOK_KEY = '254161673204579' # Facebook App ID
+SOCIAL_AUTH_FACEBOOK_SECRET = '9b32541f5bf1ae83ebcd8b19b7726746' # Facebook App Secret
+SOCIAL_AUTH_FACEBOOK_SCOPE = ['email']
+
+SOCIAL_AUTH_TWITTER_KEY = 'z3HNAgpX2yNjx7fDdNE31qdZo' # Twitter API Key
+SOCIAL_AUTH_TWITTER_SECRET = '32jEHbPT0roJC9rCbIgNyyxhuVzmSQhlV6wlQuhrX9YdB8TXMl' # Twitter API Secret
+
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = '1022865989803-li0830b8eh356572tfc5h9k857n3ltcv.apps.googleusercontent.com' # Google Consumer Key
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = 'jjQZ0uiezeUy4lk0aZMcrxWS' # Google Consumer Secret
+
 
 WSGI_APPLICATION = 'bookmarks.wsgi.application'
 
@@ -134,6 +152,7 @@ LOGOUT_URL = 'logout'
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend' # 用于测试配置，将要发送的email输出到控制台
+
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
